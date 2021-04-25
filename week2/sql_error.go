@@ -10,7 +10,7 @@ import (
 //dao遇到 sql.ErrNoRows 不应改wrap，应该直接处理，不返回数据即可
 
 func main() {
-	db, err := sql.Open("mysql", "dev_web:z@tcp(10.30.7.108:3306)/wxziroom");
+	db, err := sql.Open("mysql", "root:123456@tcp(192.168.33.111:3306)/wxziroom");
 	defer db.Close()
 
 	if err != nil {
