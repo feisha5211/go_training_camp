@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"golang.org/x/sync/errgroup"
 	"net/http"
@@ -19,11 +20,13 @@ func main()  {
 	var g errgroup.Group
 	g.Go(func() error {
 		err := serveDebug(stop)
+		fmt.Println(err, "debug")
 		done <- err
 		return err
 	})
 	g.Go(func() error {
 		err := serveApp(stop)
+		fmt.Println(err, "app")
 		done <- err
 		return err
 	})
@@ -40,8 +43,8 @@ func main()  {
 	}
 	//等待系统信号
 	waitForSignal()
-	close(stop)
 	fmt.Println("stopping all")
+	close(stop)
 	if err := g.Wait(); err == nil {
 		fmt.Println("Successfully exec")
 	} else {
@@ -55,7 +58,9 @@ func serve(addr string, handler http.Handler, stop <-chan struct{}) error {
 		Handler: handler,
 	}
 	go func() {
+		fmt.Println("pending", addr)
 		<-stop
+		fmt.Println("server shutdown", addr)
 		s.Shutdown(context.Background())
 	}()
 
@@ -70,6 +75,7 @@ func serveApp(stop <-chan struct{}) error {
 	for {
 		select {
 		case <-stop:
+			return errors.New("stop_app")
 		default:
 			return serve("0.0.0.0:8090", mux, stop)
 		}
@@ -92,7 +98,6 @@ func serveDebug(stop <-chan struct{}) error {
 
 func waitForSignal() {
 	sigs := make(chan os.Signal)
-	signal.Notify(sigs, os.Interrupt)
-	signal.Notify(sigs, syscall.SIGTERM)
+	signal.Notify(sigs, os.Interrupt, syscall.SIGTERM)
 	fmt.Println(<-sigs)
 }
