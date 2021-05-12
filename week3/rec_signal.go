@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"os/signal"
+	"runtime"
 	"sync"
 	"syscall"
 	"time"
@@ -32,10 +33,14 @@ func main() {
 			worker(stop)
 		}(stop)
 	}
+	fmt.Println("goroutine before num:", runtime.NumGoroutine())
+
 	waitForSignal()
 	close(stop)
+
 	fmt.Println("stopping all job")
 	wg.Wait()
+	fmt.Println("goroutine after num:", runtime.NumGoroutine())
 }
 
 func waitForSignal() {
